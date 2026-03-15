@@ -113,6 +113,15 @@ public abstract class AbstractKafkaListener<E, H extends EventHook<E>, R>
       // Initialize MDC context with event metadata
       setMDCContext(event);
 
+      // Propagate cascade operation ID from SystemMetadata to MDC for cross-service correlation
+      SystemMetadata sysMetadata = getSystemMetadata(event);
+      if (sysMetadata != null && sysMetadata.getProperties() != null) {
+        String cascadeOpId = sysMetadata.getProperties().get("cascadeOperationId");
+        if (cascadeOpId != null) {
+          MDC.put("cascade.operation.id", cascadeOpId);
+        }
+      }
+
       // Check if should skip processing
       if (shouldSkipProcessing(event)) {
         log.info("Skipping event: {}", event);
